@@ -25,6 +25,7 @@ dependencies:
 - attoparsec-expr
 - neat-interpolation
 - text
+- containers
 
 library:
   source-dirs: src
