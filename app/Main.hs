@@ -50,7 +50,7 @@ topParser :: Parser VCL
 topParser = fmap VCL . some $ SubRoutine <$> (A.string "sub" *> nameParser) <*> (A.skipSpace *> A.char '{' *> many statementParser <* A.skipSpace <* A.char '}')
 
 paramParser :: Parser [Expression]
-paramParser = A.skipSpace *> A.char '(' *> many (exprParser <* A.skipSpace <* A.char ',' <|> exprParser) <* A.skipSpace <* A.char ')'
+paramParser = A.skipSpace *> A.char '(' *> A.sepBy exprParser (A.skipSpace *> A.char ',' <* A.skipSpace) <* A.skipSpace <* A.char ')'
 
 statementParser :: Parser Statement
 statementParser = (A.skipSpace *>) $
@@ -79,23 +79,23 @@ stringParser = A.char '"' *> A.takeWhile (/= '"') <* A.char '"' -- TODO
 
 opTable :: OperatorTable Text Expression
 opTable = [
-    [Prefix (Not <$ A.char '!')]
-  , [Infix (Bin Plus <$ A.char '+') AssocLeft]
+    [Prefix (A.skipSpace *> (Not <$ A.char '!'))]
+  , [Infix (A.skipSpace *> (Bin Plus <$ A.char '+')) AssocLeft]
   ]
 
-exprParser :: Parser Expression
-exprParser = (A.skipSpace *>) $
+termParser :: Parser Expression
+termParser = (A.skipSpace *>) $
   VarLit <$> nameParser <|>
   StringLit <$> stringParser <|>
-  NumLit <$> A.decimal <|>
+  NumLit <$> A.decimal  <|>
   --Not <$> (A.char '!' *> exprParser) <|>
   -- (\a op b -> Compare op a b) <$> exprParser <*> eqOpParser <*> exprParser -- <|>
   --Match <$> nameParser <*> (A.skipSpace *> A.char '~' *> A.skipSpace *> stringParser) <|>
   --Assignment <$> nameParser <*> (A.skipSpace *> A.char '=' *> exprParser) <|>
   --(\a op b -> Bin op a b) <$> (StringLit <$> stringParser) <*> binOpParser <*> (VarLit <$> nameParser)
-  noe
+  A.char '(' *> A.skipSpace *> exprParser <* A.skipSpace <* A.char ')'
 
-noe = buildExpressionParser opTable exprParser
+exprParser = buildExpressionParser opTable termParser
 
 main :: IO ()
 main = do
